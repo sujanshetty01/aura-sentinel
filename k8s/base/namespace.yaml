@@ -1,0 +1,10 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Aura Sentinel — Kubernetes Namespace
+# ═══════════════════════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aura-sentinel
+  labels:
+    app.kubernetes.io/name: aura-sentinel
+    app.kubernetes.io/managed-by: kubectl

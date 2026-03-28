@@ -1,0 +1,161 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Aura Sentinel — Python Consumer Deployments
+#  consumer-intelligence: Shannon entropy detection
+#  consumer-graph:        Neo4j graph mapping
+#  metrics-exporter:      Prometheus /metrics endpoint
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── consumer-intelligence ─────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumer-intelligence
+  namespace: aura-sentinel
+  labels:
+    app: consumer-intelligence
+    component: detection-engine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consumer-intelligence
+  template:
+    metadata:
+      labels:
+        app: consumer-intelligence
+    spec:
+      containers:
+        - name: consumer-intelligence
+          image: aura-sentinel/consumer-intelligence:latest
+          imagePullPolicy: Never
+          # Build with: docker build -f Dockerfile.consumer -t aura-sentinel/consumer-intelligence .
+          # On EKS: push to ECR and update image: <account>.dkr.ecr.<region>.amazonaws.com/aura-sentinel:latest
+          env:
+            - name: KAFKA_BOOTSTRAP
+              value: "kafka:29092"
+            - name: KAFKA_TOPIC
+              value: "network-telemetry"
+            - name: KAFKA_GROUP
+              value: "aura-sentinel-intelligence"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            exec:
+              command: ["python3", "-c", "import socket; socket.create_connection(('kafka', 29092), timeout=2)"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+---
+# ── consumer-graph ────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumer-graph
+  namespace: aura-sentinel
+  labels:
+    app: consumer-graph
+    component: graph-ingestion
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consumer-graph
+  template:
+    metadata:
+      labels:
+        app: consumer-graph
+    spec:
+      initContainers:
+        - name: wait-for-neo4j
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z neo4j 7687; do echo "waiting for neo4j bolt..."; sleep 3; done']
+      containers:
+        - name: consumer-graph
+          image: aura-sentinel/consumer-graph:latest
+          imagePullPolicy: Never
+          env:
+            - name: KAFKA_BOOTSTRAP
+              value: "kafka:29092"
+            - name: NEO4J_URI
+              value: "bolt://neo4j:7687"
+            - name: NEO4J_USER
+              value: "neo4j"
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: neo4j-credentials
+                  key: password
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+# ── metrics-exporter ─────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-exporter
+  namespace: aura-sentinel
+  labels:
+    app: metrics-exporter
+    component: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics-exporter
+  template:
+    metadata:
+      labels:
+        app: metrics-exporter
+      annotations:
+        # Prometheus auto-discovery: scrape this pod automatically
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: metrics-exporter
+          image: aura-sentinel/metrics-exporter:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+              name: metrics
+          env:
+            - name: KAFKA_BOOTSTRAP
+              value: "kafka:29092"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-exporter
+  namespace: aura-sentinel
+  labels:
+    app: metrics-exporter
+spec:
+  selector:
+    app: metrics-exporter
+  ports:
+    - name: metrics
+      port: 8000
+      targetPort: 8000

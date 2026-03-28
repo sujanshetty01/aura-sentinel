@@ -1,0 +1,4 @@
+neo4j==5.14.1
+confluent-kafka==2.3.0
+numpy==1.26.2
+requests==2.31.0

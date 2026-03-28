@@ -1,0 +1,8 @@
+*.log
+*.csv
+__pycache__/
+.venv/
+venv/
+.DS_Store
+remediation_report.json
+*.plan
