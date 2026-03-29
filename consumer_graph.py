@@ -1,10 +1,13 @@
 from neo4j import GraphDatabase
 from confluent_kafka import Consumer
 import json
+import os
 
 # Neo4j Setup
-uri = "bolt://localhost:7687"
-driver = GraphDatabase.driver(uri, auth=("neo4j", "password123"))
+uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+user = os.getenv("NEO4J_USER", "neo4j")
+password = os.getenv("NEO4J_PASSWORD", "password123")
+driver = GraphDatabase.driver(uri, auth=(user, password))
 
 def add_flow(tx, src, dst, bytes_val):
     # This Cypher query creates IPs and connects them with a "SENT_DATA" relationship
@@ -18,7 +21,7 @@ def add_flow(tx, src, dst, bytes_val):
     tx.run(query, src=src, dst=dst, bytes_val=bytes_val)
 
 # Kafka Setup
-conf = {'bootstrap.servers': "localhost:9092", 'group.id': "graph-mapper", 'auto.offset.reset': 'earliest'}
+conf = {'bootstrap.servers': os.getenv("KAFKA_BOOTSTRAP", "localhost:9092"), 'group.id': "graph-mapper", 'auto.offset.reset': 'earliest'}
 consumer = Consumer(conf)
 consumer.subscribe(['network-telemetry'])
 

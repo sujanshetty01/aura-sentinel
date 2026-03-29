@@ -447,10 +447,16 @@ def main():
         json.dump(report, f, indent=2)
     print(f"  {GREEN}📋  {REPORT_FILE} written — audit trail saved.{RESET}")
 
-    # 7. Fire Discord / Slack webhook for each blocked hub
+    # 7. Fire Discord / Slack webhook and update Prometheus metrics for each blocked hub
     print(f"\n[*] Dispatching kill-switch notifications...")
     for hub in hubs:
         send_reaper_alert(hub, total_hubs_in_run=len(hubs))
+        # Update Grafana dashboard
+        try:
+            requests.post("http://localhost:8000/dismantle", timeout=2)
+            print(f"  {GREEN}📈  Grafana metric updated → C2 Hub Dismantled{RESET}")
+        except Exception as e:
+            print(f"  {YELLOW}⚠   Could not update Grafana metric (is metrics-exporter port-forwarded?): {e}{RESET}")
 
     # 8. Print next steps
     print(f"""

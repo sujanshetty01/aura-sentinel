@@ -1,10 +1,11 @@
 import json
+import os
 import numpy as np
 from collections import defaultdict
 from confluent_kafka import Consumer, KafkaError
 
 conf = {
-    'bootstrap.servers': "localhost:9092",
+    'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP', "localhost:9092"),
     'group.id': "aura-sentinel-v1",
     'auto.offset.reset': 'earliest'
 }

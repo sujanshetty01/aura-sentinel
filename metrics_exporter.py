@@ -22,13 +22,14 @@ import json
 import math
 import time
 import threading
+import os
 from collections import defaultdict
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from confluent_kafka import Consumer, KafkaError
 
 # ── Config ────────────────────────────────────────────────────────────────────
-KAFKA_BOOTSTRAP  = "localhost:9092"
+KAFKA_BOOTSTRAP  = os.getenv("KAFKA_BOOTSTRAP", "localhost:9092")
 KAFKA_TOPIC      = "network-telemetry"
 KAFKA_GROUP      = "aura-prometheus-exporter"
 METRICS_PORT     = 8000
@@ -110,6 +111,18 @@ class MetricsHandler(BaseHTTPRequestHandler):
             self.wfile.write(body)
         elif self.path == '/health':
             self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b'OK')
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_POST(self):
+        global c2_hubs_total
+        if self.path == '/dismantle':
+            c2_hubs_total += 1
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
             self.end_headers()
             self.wfile.write(b'OK')
         else:

@@ -26,12 +26,6 @@ data:
       evaluation_interval: 5s
 
     scrape_configs:
-      # Scrape the Aura Sentinel metrics exporter pod
-      - job_name: 'aura-sentinel-metrics'
-        static_configs:
-          - targets: ['metrics-exporter:8000']
-        metrics_path: '/metrics'
-
       # Auto-discover any pod with prometheus.io/scrape=true annotation
       - job_name: 'kubernetes-pods'
         kubernetes_sd_configs:

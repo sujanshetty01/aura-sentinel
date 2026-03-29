@@ -45,9 +45,9 @@ else
     echo "[✓] minikube already installed."
 fi
 
-# 5. Start Minikube with higher resources (4 CPUs, 8GB RAM minimum recommended for Aura)
-echo "[+] Starting Minikube cluster (4 CPUs, 8192MB Memory)..."
-sg docker -c "minikube start --cpus 4 --memory 8192 --driver=docker"
+# 5. Start Minikube with resources (2 CPUs, 4GB RAM)
+echo "[+] Starting Minikube cluster (2 CPUs, 4096MB Memory)..."
+sg docker -c "minikube start --cpus 2 --memory 4096 --driver=docker"
 
 # 6. Build Docker Images
 echo "[+] Building internal Python Consumer Docker images..."
@@ -64,8 +64,39 @@ pip3 install -r requirements.txt --break-system-packages
 echo "[+] Applying Kustomize resources to Minikube..."
 sg docker -c "kubectl apply -k k8s/base"
 
+echo "[+] Waiting for essential pods to be ready (this may take a few minutes)..."
+sg docker -c "kubectl wait --namespace aura-sentinel --for=condition=ready pod -l app=grafana --timeout=300s"
+sg docker -c "kubectl wait --namespace aura-sentinel --for=condition=ready pod -l app=kafka --timeout=300s"
+
+echo "[+] Setting up Port Forwards in the background..."
+pkill -f "kubectl port-forward" || true
+nohup sg docker -c "kubectl port-forward --address 0.0.0.0 svc/grafana 3000:3000 -n aura-sentinel" > grafana_pf.log 2>&1 &
+nohup sg docker -c "kubectl port-forward --address 0.0.0.0 svc/kafka 9092:9092 -n aura-sentinel" > kafka_pf.log 2>&1 &
+nohup sg docker -c "kubectl port-forward --address 0.0.0.0 svc/metrics-exporter 8000:8000 -n aura-sentinel" > metrics_pf.log 2>&1 &
+
+echo "[+] Starting synthetic data generator..."
+pkill -f "producer.py" || true
+# wait a few seconds for port forwards to initialize
+sleep 3
+nohup python3 producer.py > producer.log 2>&1 &
+
+PUBLIC_IP=$(curl -s ifconfig.me)
+if [ -z "$PUBLIC_IP" ]; then
+    PUBLIC_IP="127.0.0.1"
+fi
+
 echo "========================================================="
-echo "✅ Bootstrap Complete!"
-echo "Check pod status: kubectl get pods -n aura-sentinel"
-echo "Port-forward Grafana: kubectl port-forward svc/grafana 3000:3000 -n aura-sentinel"
+echo "✅ Aura Sentinel Pipeline is fully successfully deployed!"
+echo "========================================================="
+echo ""
+echo "📊 Grafana Dashboard: http://$PUBLIC_IP:3000"
+echo "   Email: admin"
+echo "   Password: AuraSentinel2024"
+echo ""
+echo "📝 Background processes running:"
+echo "   - Grafana port-forward (3000)"
+echo "   - Kafka port-forward (9092)"
+echo "   - Data Producer (streaming network_flows.csv to Kafka)"
+echo ""
+echo "Check producer logs with: tail -f producer.log"
 echo "========================================================="

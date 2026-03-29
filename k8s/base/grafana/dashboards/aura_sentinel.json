@@ -33,7 +33,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -62,14 +62,14 @@
       "type": "stat",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "aura_alert_total",
+          "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
+          "expr": "sum(aura_alert_total)",
           "legendFormat": "Alerts"
         }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -94,14 +94,14 @@
       "type": "stat",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "aura_c2_hubs_detected_total",
+          "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
+          "expr": "sum(aura_c2_hubs_detected_total)",
           "legendFormat": "C2 Hubs"
         }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -119,14 +119,14 @@
       "type": "stat",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "aura_messages_consumed_total",
+          "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
+          "expr": "sum(aura_messages_consumed_total)",
           "legendFormat": "Messages"
         }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -152,14 +152,14 @@
       "type": "stat",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "aura_active_tracked_ips",
+          "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
+          "expr": "sum(aura_active_tracked_ips)",
           "legendFormat": "Tracked IPs"
         }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -187,8 +187,8 @@
       "type": "gauge",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "avg(aura_entropy_score)",
+          "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
+          "expr": "((sum(aura_entropy_score) or vector(0)) + (aura_active_tracked_ips - (count(aura_entropy_score) or vector(0))) * 3) / aura_active_tracked_ips",
           "legendFormat": "Avg Entropy"
         }
       ]
@@ -201,7 +201,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -233,14 +233,14 @@
       "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
           "expr": "topk(10, aura_entropy_score)",
           "legendFormat": "{{src_ip}}"
         }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -258,13 +258,13 @@
       "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "rate(aura_alert_total[1m]) * 60",
+          "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
+          "expr": "sum(rate(aura_alert_total[1m])) * 60",
           "legendFormat": "Alerts/min"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "rate(aura_messages_consumed_total[1m]) * 60",
+          "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
+          "expr": "sum(rate(aura_messages_consumed_total[1m])) * 60",
           "legendFormat": "Messages/min"
         }
       ]
@@ -277,7 +277,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -298,14 +298,14 @@
       "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
           "expr": "topk(10, rate(aura_bytes_total[1m]))",
           "legendFormat": "{{src_ip}} → {{dst_ip}}"
         }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
       "fieldConfig": {
         "defaults": { "unit": "bytes" },
         "overrides": [
@@ -323,7 +323,7 @@
       "type": "table",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "DS_PROMETHEUS" },
           "expr": "topk(20, aura_bytes_total)",
           "legendFormat": "",
           "instant": true,
